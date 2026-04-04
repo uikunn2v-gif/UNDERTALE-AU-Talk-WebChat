@@ -5,8 +5,14 @@
 </head>
 <body>
   <h2>チャット</h2>
+
+  <!-- 名前入力 -->
+  <input id="name" placeholder="名前"><br>
+
+  <!-- メッセージ -->
   <input id="msg" placeholder="メッセージ">
   <button onclick="send()">送信</button>
+
   <ul id="chat"></ul>
 
   <!-- Firebase -->
@@ -25,42 +31,30 @@
     const db = firebase.database();
 
     function send() {
+      const name = document.getElementById("name").value;
       const msg = document.getElementById("msg").value;
-      if (msg !== "") {
-        db.ref("chat").push(msg);
+
+      if (name !== "" && msg !== "") {
+        db.ref("chat").push({
+          name: name,
+          message: msg
+        });
+
+        document.getElementById("msg").value = "";
       }
     }
 
     db.ref("chat").on("child_added", snapshot => {
+      const data = snapshot.val();
+
+      if (!data || !data.name || !data.message) return;
+
       const li = document.createElement("li");
-      li.textContent = snapshot.val();
+      li.textContent = data.name + "： " + data.message;
+
       document.getElementById("chat").appendChild(li);
     });
-  <script>
-function send() {
-  const name = document.getElementById("name").value;
-  const msg = document.getElementById("msg").value;
+  </script>
 
-  if (name !== "" && msg !== "") {
-    db.ref("chat").push({
-      name: name,
-      message: msg
-    });
-
-    // 入力リセット
-    document.getElementById("msg").value = "";
-  }
-}
-
-db.ref("chat").on("child_added", snapshot => {
-  const data = snapshot.val();
-
-  // 🔥 ここが最重要（これ無いとバグる）
-  if (!data || !data.name || !data.message) return;
-
-  const li = document.createElement("li");
-  li.textContent = data.name + "： " + data.message;
-
-  document.getElementById("chat").appendChild(li);
-});
-</script>
+</body>
+</html>
