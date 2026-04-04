@@ -1,121 +1,72 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Chat</title>
-
-  <style>
-    body {
-      background-color: black;
-      color: white;
-      font-family: sans-serif;
-    }
-
-    input, button {
-      background-color: #222;
-      color: white;
-      border: 1px solid #555;
-    }
-
-    ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    li {
-      margin: 5px 0;
-    }
-  </style>
-
+  <title>Chat Test</title>
 </head>
 <body>
 
-  <h2>チャット</h2>
+<h2>テスト自動送信</h2>
+<ul id="chat"></ul>
 
-  <input id="name" placeholder="名前"><br>
-  <input id="msg" placeholder="メッセージ">
-  <button onclick="send()">送信</button>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-  <ul id="chat"></ul>
+<script>
+const firebaseConfig = {
+  apiKey: "test",
+  authDomain: "test",
+  databaseURL: "https://undertale-au-talk-web-default-rtdb.firebaseio.com/",
+  projectId: "undertale-au-talk-web"
+};
 
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "test",
-      authDomain: "test",
-      databaseURL: "https://undertale-au-talk-web-default-rtdb.firebaseio.com/",
-      projectId: "undertale-au-talk-web"
-    };
+const MAX_MESSAGES = 20;
+const TEST_USER = "TestBot";
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+// 🔹 child_added で画面表示
+db.ref("chat").on("child_added", snapshot => {
+  const data = snapshot.val();
+  if (!data || !data.name || !data.message) return;
 
-    const MAX_USERS = 10;
-    const MAX_MESSAGES = 20;
-    const ADMIN_NAME = "NecroNight"; // ←自分の名前
+  const li = document.createElement("li");
+  li.id = snapshot.key;
+  li.textContent = data.name + "： " + data.message;
+  document.getElementById("chat").appendChild(li);
+});
 
-    async function send() {
-      const name = document.getElementById("name").value;
-      const msg = document.getElementById("msg").value;
+// 🔹 child_removed で画面から削除
+db.ref("chat").on("child_removed", snapshot => {
+  const li = document.getElementById(snapshot.key);
+  if (li) li.remove();
+});
 
-      if (name === "" || msg === "") return;
+// 🔹 テスト送信
+async function sendTestMessages(count) {
+  for (let i = 1; i <= count; i++) {
+    await db.ref("chat").push({
+      name: TEST_USER,
+      message: "テストメッセージ " + i
+    });
 
-      // 🔥 現在のユーザー数取得
-      const snapshot = await db.ref("users").once("value");
-      const users = snapshot.val() || {};
-      const userCount = Object.keys(users).length;
+    // 送信後に古いメッセージを削除
+    const snapshot = await db.ref("chat").once("value");
+    const messages = snapshot.val() || {};
+    const keys = Object.keys(messages);
 
-      // 🔥 制限チェック（管理者は無視）
-      if (name !== ADMIN_NAME && userCount >= MAX_USERS && !users[name]) {
-        alert("満員です（10人まで）");
-        return;
+    if (keys.length > MAX_MESSAGES) {
+      const excess = keys.length - MAX_MESSAGES;
+      for (let j = 0; j < excess; j++) {
+        await db.ref("chat/" + keys[j]).remove();
       }
-
-      // 🔥 ユーザー登録
-      db.ref("users/" + name).set(true);
-
-      // 🔥 メッセージ送信
-      db.ref("chat").push({
-        name: name,
-        message: msg
-      }).then(() => {
-        // 送信後に古いメッセージを削除
-        db.ref("chat").once("value", snapshot => {
-          const messages = snapshot.val() || {};
-          const keys = Object.keys(messages);
-
-          if (keys.length > MAX_MESSAGES) {
-            const excess = keys.length - MAX_MESSAGES;
-            for (let i = 0; i < excess; i++) {
-              db.ref("chat/" + keys[i]).remove();
-            }
-          }
-        });
-      });
-
-      document.getElementById("msg").value = "";
     }
+  }
+}
 
-    // 🔹 新しいメッセージを画面に追加
-    db.ref("chat").on("child_added", snapshot => {
-      const data = snapshot.val();
-      if (!data || !data.name || !data.message) return;
-
-      const li = document.createElement("li");
-      li.id = snapshot.key; // ← keyをIDとして保持
-      li.textContent = data.name + "： " + data.message;
-
-      document.getElementById("chat").appendChild(li);
-    });
-
-    // 🔹 削除されたメッセージも画面から消す
-    db.ref("chat").on("child_removed", snapshot => {
-      const li = document.getElementById(snapshot.key);
-      if (li) li.remove();
-    });
-
-  </script>
+// 🔹 自動テスト（21件送信）
+sendTestMessages(21);
+</script>
 
 </body>
 </html>
