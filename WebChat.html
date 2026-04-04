@@ -47,7 +47,7 @@ function send() {
       message: msg
     });
 
-    // 🔥 送信後にメッセージ欄リセット
+    // 入力リセット
     document.getElementById("msg").value = "";
   }
 }
@@ -55,7 +55,7 @@ function send() {
 db.ref("chat").on("child_added", snapshot => {
   const data = snapshot.val();
 
-  // 🔥 これが超重要
+  // 🔥 ここが最重要（これ無いとバグる）
   if (!data || !data.name || !data.message) return;
 
   const li = document.createElement("li");
