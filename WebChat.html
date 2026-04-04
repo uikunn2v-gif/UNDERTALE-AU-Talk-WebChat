@@ -1,60 +1,66 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Chat</title>
-</head>
-<body>
-  <h2>チャット</h2>
+<!DOCTYPE html>  <html>  
+<head>  
+  <title>Chat</title>  
+</head>  
+<body>  
+<style>  
+  body {  
+    background-color: black;  
+    color: white;  
+    font-family: sans-serif;  
+  }  input, button {
+background-color: #222;
+color: white;
+border: 1px solid #555;
+}
 
-  <!-- 名前入力 -->
-  <input id="name" placeholder="名前"><br>
+ul {
+list-style: none;
+padding: 0;
+}
 
-  <!-- メッセージ -->
-  <input id="msg" placeholder="メッセージ">
-  <button onclick="send()">送信</button>
+li {
+margin: 5px 0;
+}
+</style>
 
-  <ul id="chat"></ul>
+  <h2>チャット</h2>    <!-- 名前入力 -->  <input id="name" placeholder="名前"><br>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-  <script>
-    const firebaseConfig = {
-      apiKey: "test",
-      authDomain: "test",
-      databaseURL: "https://undertale-au-talk-web-default-rtdb.firebaseio.com/",
-      projectId: "undertale-au-talk-web"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    function send() {
-      const name = document.getElementById("name").value;
-      const msg = document.getElementById("msg").value;
-
-      if (name !== "" && msg !== "") {
-        db.ref("chat").push({
-          name: name,
-          message: msg
-        });
-
-        document.getElementById("msg").value = "";
-      }
-    }
-
-    db.ref("chat").on("child_added", snapshot => {
-      const data = snapshot.val();
-
-      if (!data || !data.name || !data.message) return;
-
-      const li = document.createElement("li");
-      li.textContent = data.name + "： " + data.message;
-
-      document.getElementById("chat").appendChild(li);
-    });
-  </script>
-
-</body>
-</html>
+  <!-- メッセージ -->    <input id="msg" placeholder="メッセージ">  
+  <button onclick="send()">送信</button>    <ul id="chat"></ul>    <!-- Firebase -->    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>    <script>  
+    const firebaseConfig = {  
+      apiKey: "test",  
+      authDomain: "test",  
+      databaseURL: "https://undertale-au-talk-web-default-rtdb.firebaseio.com/",  
+      projectId: "undertale-au-talk-web"  
+    };  
+  
+    firebase.initializeApp(firebaseConfig);  
+    const db = firebase.database();  
+  
+    function send() {  
+      const name = document.getElementById("name").value;  
+      const msg = document.getElementById("msg").value;  
+  
+      if (name !== "" && msg !== "") {  
+        db.ref("chat").push({  
+          name: name,  
+          message: msg  
+        });  
+  
+        document.getElementById("msg").value = "";  
+      }  
+    }  
+  
+    db.ref("chat").on("child_added", snapshot => {  
+      const data = snapshot.val();  
+  
+      if (!data || !data.name || !data.message) return;  
+  
+      const li = document.createElement("li");  
+      li.textContent = data.name + "： " + data.message;  
+  
+      document.getElementById("chat").appendChild(li);  
+    });  
+  </script>  </body>  
+</html>  
