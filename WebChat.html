@@ -39,3 +39,23 @@
   </script>
 </body>
 </html>
+<input id="name" placeholder="名前">
+function send() {
+  const name = document.getElementById("name").value;
+  const msg = document.getElementById("msg").value;
+
+  if (name !== "" && msg !== "") {
+    db.ref("chat").push({
+      name: name,
+      message: msg
+    });
+  }
+}
+db.ref("chat").on("child_added", snapshot => {
+  const data = snapshot.val();
+
+  const li = document.createElement("li");
+  li.textContent = data.name + "： " + data.message;
+
+  document.getElementById("chat").appendChild(li);
+});
