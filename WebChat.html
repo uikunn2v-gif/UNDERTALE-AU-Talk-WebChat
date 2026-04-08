@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Chat Test</title>
+  <title>Chat</title>
 </head>
 <body>
 
-<h2>テスト自動送信</h2>
+<h2>チャット</h2>
+
+<input id="name" placeholder="名前"><br>
+<input id="msg" placeholder="メッセージ">
+<button onclick="send()">送信</button>
+
 <ul id="chat"></ul>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -23,9 +28,35 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 const MAX_MESSAGES = 20;
-const TEST_USER = "TestBot";
 
-// 🔹 child_added で画面表示
+// 🔹 メッセージ送信
+async function send() {
+  const name = document.getElementById("name").value;
+  const msg = document.getElementById("msg").value;
+
+  if (name !== "" && msg !== "") {
+    await db.ref("chat").push({
+      name: name,
+      message: msg
+    });
+
+    document.getElementById("msg").value = "";
+
+    // 🔥 古いメッセージ削除（20件制限）
+    const snapshot = await db.ref("chat").once("value");
+    const messages = snapshot.val() || {};
+    const keys = Object.keys(messages);
+
+    if (keys.length > MAX_MESSAGES) {
+      const excess = keys.length - MAX_MESSAGES;
+      for (let i = 0; i < excess; i++) {
+        await db.ref("chat/" + keys[i]).remove();
+      }
+    }
+  }
+}
+
+// 🔹 表示
 db.ref("chat").on("child_added", snapshot => {
   const data = snapshot.val();
   if (!data || !data.name || !data.message) return;
@@ -36,36 +67,11 @@ db.ref("chat").on("child_added", snapshot => {
   document.getElementById("chat").appendChild(li);
 });
 
-// 🔹 child_removed で画面から削除
+// 🔹 削除されたら画面からも消す
 db.ref("chat").on("child_removed", snapshot => {
   const li = document.getElementById(snapshot.key);
   if (li) li.remove();
 });
-
-// 🔹 テスト送信
-async function sendTestMessages(count) {
-  for (let i = 1; i <= count; i++) {
-    await db.ref("chat").push({
-      name: TEST_USER,
-      message: "テストメッセージ " + i
-    });
-
-    // 送信後に古いメッセージを削除
-    const snapshot = await db.ref("chat").once("value");
-    const messages = snapshot.val() || {};
-    const keys = Object.keys(messages);
-
-    if (keys.length > MAX_MESSAGES) {
-      const excess = keys.length - MAX_MESSAGES;
-      for (let j = 0; j < excess; j++) {
-        await db.ref("chat/" + keys[j]).remove();
-      }
-    }
-  }
-}
-
-// 🔹 自動テスト（21件送信）
-sendTestMessages(21);
 </script>
 
 </body>
