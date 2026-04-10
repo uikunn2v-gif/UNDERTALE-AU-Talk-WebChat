@@ -57,14 +57,14 @@ const MAX_MESSAGES = 20;
 const MAX_USERS = 10;
 const ADMIN_PASSWORD = "Over2520World-10-101-10-0-NecroNight";
 
-// 🔥 ユーザーID生成
+// ユーザーID
 let userId = localStorage.getItem("userId");
 if (!userId) {
   userId = "user_" + Math.random().toString(36).substr(2, 9);
   localStorage.setItem("userId", userId);
 }
 
-// 🔹 入室処理
+// 入室
 window.onload = async () => {
   const savedName = localStorage.getItem("username");
   if (savedName) {
@@ -78,28 +78,26 @@ window.onload = async () => {
   const pass = document.getElementById("pass").value;
   const isAdmin = pass === ADMIN_PASSWORD;
 
-  // 🔥 満員チェック（管理者は無視）
   if (!users[userId] && count >= MAX_USERS && !isAdmin) {
     document.getElementById("status").textContent = "満員です（10人まで）";
     document.querySelector("button").disabled = true;
     return;
   }
 
-  // 🔥 入室
-  db.ref("users/" + userId).set(true);
+  await db.ref("users/" + userId).set(true);
   db.ref("users/" + userId).onDisconnect().remove();
 
   document.getElementById("status").textContent =
-    isAdmin ? "管理者として入室中" : "入室中（現在人数：" + (count + 1) + "人）";
+    isAdmin ? "🔥 管理者として入室中" : "入室中（現在人数：" + (count + 1) + "人）";
 };
 
-// 🔹 メッセージ送信
+// 送信
 async function send() {
   let name = document.getElementById("name").value.trim();
   let msg = document.getElementById("msg").value.trim();
   let pass = document.getElementById("pass").value;
 
-  if (name.length === 0 || msg.length === 0) return;
+  if (!name || !msg) return;
 
   if (name.length > 20) {
     alert("名前は20文字まで！");
@@ -113,17 +111,17 @@ async function send() {
 
   const isAdmin = pass === ADMIN_PASSWORD;
 
-  // 🔥 名前保存
   localStorage.setItem("username", name);
 
   await db.ref("chat").push({
-    name: name,
-    message: msg
+    name: isAdmin ? "👑 " + name : name,
+    message: msg,
+    time: Date.now()
   });
 
   document.getElementById("msg").value = "";
 
-  // 🔥 20件制限
+  // 20件制限
   const snapshot = await db.ref("chat").once("value");
   const messages = snapshot.val() || {};
   const keys = Object.keys(messages);
@@ -136,9 +134,10 @@ async function send() {
   }
 }
 
-// 🔹 表示
+// 表示
 db.ref("chat").on("child_added", snapshot => {
   const data = snapshot.val();
+
   if (!data || !data.name || !data.message) return;
 
   const li = document.createElement("li");
@@ -148,7 +147,7 @@ db.ref("chat").on("child_added", snapshot => {
   document.getElementById("chat").appendChild(li);
 });
 
-// 🔹 削除反映
+// 削除反映
 db.ref("chat").on("child_removed", snapshot => {
   const li = document.getElementById(snapshot.key);
   if (li) li.remove();
